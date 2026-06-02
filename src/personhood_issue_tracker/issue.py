@@ -1741,6 +1741,17 @@ def init_issue_tracking(
     if os.getenv("PYTEST_CURRENT_TEST"):
         return result
 
+    # Hard opt-in gate (2026-06 spam remediation): the GitHub-issue firehose is OFF by
+    # default. Filing one GitHub issue per log record caused org-wide duplicate-issue spam;
+    # errors now go to Sentry and work tracking to Linear. Set ENABLE_GITHUB_ISSUE_LOGGING=true
+    # to re-enable (and only with durable, GitHub-backed dedup).
+    if os.getenv("ENABLE_GITHUB_ISSUE_LOGGING", "false").strip().lower() != "true":
+        issue_log.info(
+            "personhood_issue_tracker: GitHub issue logging disabled "
+            "(set ENABLE_GITHUB_ISSUE_LOGGING=true to enable)"
+        )
+        return result
+
     root_log = logging.getLogger()
 
     if not _breadcrumb_handler_installed:
